@@ -2934,7 +2934,7 @@ namespace McpUnity.Server
                     return null; // Invalid path, return null
                 }
 
-                var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+                var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
                 if (controller != null) return controller;
             }
 
@@ -2951,7 +2951,7 @@ namespace McpUnity.Server
                         var path = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController);
                         if (!string.IsNullOrEmpty(path))
                         {
-                            return AssetDatabase.LoadAssetAtPath<AnimatorController>(path);
+                            return AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(path);
                         }
                     }
                 }
@@ -3013,13 +3013,13 @@ namespace McpUnity.Server
 
                 switch (param.type)
                 {
-                    case AnimatorControllerParameterType.Float:
+                    case UnityEngine.AnimatorControllerParameterType.Float:
                         paramInfo["defaultValue"] = param.defaultFloat;
                         break;
-                    case AnimatorControllerParameterType.Int:
+                    case UnityEngine.AnimatorControllerParameterType.Int:
                         paramInfo["defaultValue"] = param.defaultInt;
                         break;
-                    case AnimatorControllerParameterType.Bool:
+                    case UnityEngine.AnimatorControllerParameterType.Bool:
                         paramInfo["defaultValue"] = param.defaultBool;
                         break;
                 }
@@ -3485,16 +3485,16 @@ namespace McpUnity.Server
                 // Get current runtime value
                 switch (param.type)
                 {
-                    case AnimatorControllerParameterType.Float:
+                    case UnityEngine.AnimatorControllerParameterType.Float:
                         paramInfo["value"] = animator.GetFloat(param.name);
                         break;
-                    case AnimatorControllerParameterType.Int:
+                    case UnityEngine.AnimatorControllerParameterType.Int:
                         paramInfo["value"] = animator.GetInteger(param.name);
                         break;
-                    case AnimatorControllerParameterType.Bool:
+                    case UnityEngine.AnimatorControllerParameterType.Bool:
                         paramInfo["value"] = animator.GetBool(param.name);
                         break;
-                    case AnimatorControllerParameterType.Trigger:
+                    case UnityEngine.AnimatorControllerParameterType.Trigger:
                         paramInfo["value"] = null; // Triggers don't have persistent values
                         break;
                 }
@@ -3538,7 +3538,7 @@ namespace McpUnity.Server
                 return McpToolResult.Error($"No Animator component on: {gameObjectPath}");
 
             // Find the parameter to determine type if not specified
-            AnimatorControllerParameter foundParam = null;
+            UnityEngine.AnimatorControllerParameter foundParam = null;
             foreach (var param in animator.parameters)
             {
                 if (param.name == parameterName)
@@ -3602,7 +3602,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(parameterType))
                 return McpToolResult.Error("parameterType is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -3613,15 +3613,15 @@ namespace McpUnity.Server
                     return McpToolResult.Error($"Parameter '{parameterName}' already exists");
             }
 
-            AnimatorControllerParameterType type;
+            UnityEngine.AnimatorControllerParameterType type;
             switch (parameterType.ToLower())
             {
-                case "float": type = AnimatorControllerParameterType.Float; break;
+                case "float": type = UnityEngine.AnimatorControllerParameterType.Float; break;
                 case "int":
-                case "integer": type = AnimatorControllerParameterType.Int; break;
+                case "integer": type = UnityEngine.AnimatorControllerParameterType.Int; break;
                 case "bool":
-                case "boolean": type = AnimatorControllerParameterType.Bool; break;
-                case "trigger": type = AnimatorControllerParameterType.Trigger; break;
+                case "boolean": type = UnityEngine.AnimatorControllerParameterType.Bool; break;
+                case "trigger": type = UnityEngine.AnimatorControllerParameterType.Trigger; break;
                 default:
                     return McpToolResult.Error($"Invalid parameter type: {parameterType}. Use Float, Int, Bool, or Trigger");
             }
@@ -3640,13 +3640,13 @@ namespace McpUnity.Server
                         var param = parameters[i];
                         switch (type)
                         {
-                            case AnimatorControllerParameterType.Float:
+                            case UnityEngine.AnimatorControllerParameterType.Float:
                                 param.defaultFloat = Convert.ToSingle(defaultValue);
                                 break;
-                            case AnimatorControllerParameterType.Int:
+                            case UnityEngine.AnimatorControllerParameterType.Int:
                                 param.defaultInt = Convert.ToInt32(defaultValue);
                                 break;
-                            case AnimatorControllerParameterType.Bool:
+                            case UnityEngine.AnimatorControllerParameterType.Bool:
                                 param.defaultBool = Convert.ToBoolean(defaultValue);
                                 break;
                         }
@@ -3691,7 +3691,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(stateName))
                 return McpToolResult.Error("stateName is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -3785,7 +3785,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(toState))
                 return McpToolResult.Error("toState is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -3879,7 +3879,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(controllerPath))
                 return McpToolResult.Error("controllerPath is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -3970,7 +3970,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(controllerPath))
                 return McpToolResult.Error("controllerPath is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -4056,7 +4056,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(stateName))
                 return McpToolResult.Error("stateName is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -4115,7 +4115,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(toState))
                 return McpToolResult.Error("toState is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -4225,7 +4225,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(stateName))
                 return McpToolResult.Error("stateName is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -4345,7 +4345,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(toState))
                 return McpToolResult.Error("toState is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
 
@@ -4509,7 +4509,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(stateName))
                 return McpToolResult.Error("stateName is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found at: {controllerPath}");
 
@@ -4518,7 +4518,7 @@ namespace McpUnity.Server
 
             Undo.RecordObject(controller, "Create Blend Tree");
 
-            BlendTree blendTree;
+            UnityEditor.Animations.BlendTree blendTree;
             controller.CreateBlendTreeInController(stateName, out blendTree, layerIndex);
 
             if (blendTree == null)
@@ -4592,7 +4592,7 @@ namespace McpUnity.Server
             if (string.IsNullOrEmpty(motionPath))
                 return McpToolResult.Error("motionPath is required");
 
-            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            var controller = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(controllerPath);
             if (controller == null)
                 return McpToolResult.Error($"AnimatorController not found at: {controllerPath}");
 
@@ -4606,7 +4606,7 @@ namespace McpUnity.Server
             if (state == null)
                 return McpToolResult.Error($"State '{blendTreeState}' not found in layer {layerIndex}");
 
-            var blendTree = state.motion as BlendTree;
+            var blendTree = state.motion as UnityEditor.Animations.BlendTree;
             if (blendTree == null)
                 return McpToolResult.Error($"State '{blendTreeState}' does not contain a BlendTree");
 
@@ -7508,10 +7508,10 @@ namespace McpUnity.Server
         private static McpToolResult SetTag(Dictionary<string, object> args)
         {
             if (!args.TryGetValue("gameObjectPath", out var pathObj) || pathObj == null)
-                return CreateErrorResult("Missing required parameter: gameObjectPath");
+                return McpToolResult.Error("Missing required parameter: gameObjectPath");
 
             if (!args.TryGetValue("tag", out var tagObj) || tagObj == null)
-                return CreateErrorResult("Missing required parameter: tag");
+                return McpToolResult.Error("Missing required parameter: tag");
 
             string gameObjectPath = pathObj.ToString();
             string newTag = tagObj.ToString();
@@ -7519,12 +7519,12 @@ namespace McpUnity.Server
 
             var go = GameObjectHelpers.FindGameObject(gameObjectPath);
             if (go == null)
-                return CreateErrorResult($"GameObject not found: {gameObjectPath}");
+                return McpToolResult.Error($"GameObject not found: {gameObjectPath}");
 
             // Vérifier que le tag existe
             var validTags = InternalEditorUtility.tags;
             if (!validTags.Contains(newTag))
-                return CreateErrorResult($"Tag '{newTag}' does not exist. Available tags: {string.Join(", ", validTags)}");
+                return McpToolResult.Error($"Tag '{newTag}' does not exist. Available tags: {string.Join(", ", validTags)}");
 
             string oldTag = go.tag;
             int count = 1;
@@ -7570,10 +7570,10 @@ namespace McpUnity.Server
         private static McpToolResult SetLayer(Dictionary<string, object> args)
         {
             if (!args.TryGetValue("gameObjectPath", out var pathObj) || pathObj == null)
-                return CreateErrorResult("Missing required parameter: gameObjectPath");
+                return McpToolResult.Error("Missing required parameter: gameObjectPath");
 
             if (!args.TryGetValue("layer", out var layerObj) || layerObj == null)
-                return CreateErrorResult("Missing required parameter: layer");
+                return McpToolResult.Error("Missing required parameter: layer");
 
             string gameObjectPath = pathObj.ToString();
             string layerName = layerObj.ToString();
@@ -7581,11 +7581,11 @@ namespace McpUnity.Server
 
             var go = GameObjectHelpers.FindGameObject(gameObjectPath);
             if (go == null)
-                return CreateErrorResult($"GameObject not found: {gameObjectPath}");
+                return McpToolResult.Error($"GameObject not found: {gameObjectPath}");
 
             int layerIndex = LayerMask.NameToLayer(layerName);
             if (layerIndex == -1)
-                return CreateErrorResult($"Layer '{layerName}' does not exist");
+                return McpToolResult.Error($"Layer '{layerName}' does not exist");
 
             string oldLayer = LayerMask.LayerToName(go.layer);
             int count = 1;
@@ -7631,17 +7631,17 @@ namespace McpUnity.Server
         private static McpToolResult CreateTag(Dictionary<string, object> args)
         {
             if (!args.TryGetValue("tagName", out var tagObj) || tagObj == null)
-                return CreateErrorResult("Missing required parameter: tagName");
+                return McpToolResult.Error("Missing required parameter: tagName");
 
             string tagName = tagObj.ToString().Trim();
 
             if (string.IsNullOrEmpty(tagName))
-                return CreateErrorResult("Tag name cannot be empty");
+                return McpToolResult.Error("Tag name cannot be empty");
 
             // Vérifier si le tag existe déjà
             var existingTags = InternalEditorUtility.tags;
             if (existingTags.Contains(tagName))
-                return CreateErrorResult($"Tag '{tagName}' already exists");
+                return McpToolResult.Error($"Tag '{tagName}' already exists");
 
             // Ouvrir le TagManager
             SerializedObject tagManager = new SerializedObject(
@@ -7674,17 +7674,17 @@ namespace McpUnity.Server
         private static McpToolResult CreateLayer(Dictionary<string, object> args)
         {
             if (!args.TryGetValue("layerName", out var layerObj) || layerObj == null)
-                return CreateErrorResult("Missing required parameter: layerName");
+                return McpToolResult.Error("Missing required parameter: layerName");
 
             string layerName = layerObj.ToString().Trim();
 
             if (string.IsNullOrEmpty(layerName))
-                return CreateErrorResult("Layer name cannot be empty");
+                return McpToolResult.Error("Layer name cannot be empty");
 
             // Vérifier si le layer existe déjà
             int existingIndex = LayerMask.NameToLayer(layerName);
             if (existingIndex != -1)
-                return CreateErrorResult($"Layer '{layerName}' already exists at index {existingIndex}");
+                return McpToolResult.Error($"Layer '{layerName}' already exists at index {existingIndex}");
 
             // Déterminer l'index cible
             int targetIndex = -1;
@@ -7695,17 +7695,17 @@ namespace McpUnity.Server
 
                 // Valider l'index
                 if (targetIndex < 0 || targetIndex > 31)
-                    return CreateErrorResult("Layer index must be between 0 and 31");
+                    return McpToolResult.Error("Layer index must be between 0 and 31");
 
                 // Vérifier que ce n'est pas un builtin non-modifiable
                 if (targetIndex == 0 || targetIndex == 1 || targetIndex == 2 ||
                     targetIndex == 4 || targetIndex == 5)
-                    return CreateErrorResult($"Layer index {targetIndex} is a builtin layer and cannot be modified");
+                    return McpToolResult.Error($"Layer index {targetIndex} is a builtin layer and cannot be modified");
 
                 // Vérifier que le slot est vide
                 string currentName = LayerMask.LayerToName(targetIndex);
                 if (!string.IsNullOrEmpty(currentName))
-                    return CreateErrorResult($"Layer index {targetIndex} is already used by '{currentName}'");
+                    return McpToolResult.Error($"Layer index {targetIndex} is already used by '{currentName}'");
             }
             else
             {
@@ -7727,7 +7727,7 @@ namespace McpUnity.Server
                 }
 
                 if (targetIndex == -1)
-                    return CreateErrorResult("No empty layer slot available (all 27 user slots are used)");
+                    return McpToolResult.Error("No empty layer slot available (all 27 user slots are used)");
             }
 
             // Ouvrir le TagManager
