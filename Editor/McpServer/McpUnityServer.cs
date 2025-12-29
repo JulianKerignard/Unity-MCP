@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using McpUnity.Protocol;
@@ -1379,6 +1380,94 @@ namespace McpUnity.Server
                     required = new List<string> { "gameObjectPath" }
                 }
             }, ApplyPrefabOverrides);
+
+            // Tags & Layers tools
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_list_tags",
+                description = "List all available tags in the project",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>()
+                }
+            }, ListTags);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_list_layers",
+                description = "List all layers in the project (32 layers, 0-7 are Unity built-in)",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["includeEmpty"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Include unnamed layer slots (default: false)"
+                        }
+                    }
+                }
+            }, ListLayers);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_set_tag",
+                description = "Set the tag of a GameObject",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["gameObjectPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path in hierarchy (e.g., 'Player' or 'Environment/Enemy')"
+                        },
+                        ["tag"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Tag name (e.g., 'Player', 'Enemy', 'Untagged')"
+                        },
+                        ["recursive"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Apply to all children (default: false)"
+                        }
+                    },
+                    required = new List<string> { "gameObjectPath", "tag" }
+                }
+            }, SetTag);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_set_layer",
+                description = "Set the layer of a GameObject",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["gameObjectPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path in hierarchy"
+                        },
+                        ["layer"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Layer name (e.g., 'Default', 'UI', 'Water')"
+                        },
+                        ["recursive"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Apply to all children (default: false)"
+                        }
+                    },
+                    required = new List<string> { "gameObjectPath", "layer" }
+                }
+            }, SetLayer);
 
             _toolRegistry.RegisterTool(new McpToolDefinition
             {
@@ -2787,7 +2876,7 @@ namespace McpUnity.Server
 
         #region Animator Controller Helpers
 
-        private static AnimatorController LoadAnimatorController(string controllerPath, string gameObjectPath)
+        private static UnityEditor.Animations.AnimatorController LoadAnimatorController(string controllerPath, string gameObjectPath)
         {
             // Try loading from asset path first
             if (!string.IsNullOrEmpty(controllerPath))
@@ -2861,7 +2950,7 @@ namespace McpUnity.Server
             }
         }
 
-        private static Dictionary<string, object> SerializeAnimatorController(AnimatorController controller)
+        private static Dictionary<string, object> SerializeAnimatorController(UnityEditor.Animations.AnimatorController controller)
         {
             var result = new Dictionary<string, object>
             {
@@ -3001,7 +3090,7 @@ namespace McpUnity.Server
         }
 
         private static void ValidateStateMachine(AnimatorStateMachine sm, int layerIndex,
-            AnimatorController controller, List<object> errors, List<object> warnings,
+            UnityEditor.Animations.AnimatorController controller, List<object> errors, List<object> warnings,
             HashSet<string> usedParams)
         {
             // Get all states that have incoming transitions
@@ -3152,7 +3241,7 @@ namespace McpUnity.Server
             return count;
         }
 
-        private static bool IsParameterUsedInTransitions(AnimatorController controller, string paramName)
+        private static bool IsParameterUsedInTransitions(UnityEditor.Animations.AnimatorController controller, string paramName)
         {
             foreach (var layer in controller.layers)
             {
@@ -7314,6 +7403,186 @@ namespace McpUnity.Server
                 },
                 isError = false
             };
+        }
+
+        #endregion
+
+        #region Tags & Layers
+
+        private static McpToolResult ListTags(Dictionary<string, object> args)
+        {
+            var tags = InternalEditorUtility.tags;
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["tags"] = tags,
+                        ["count"] = tags.Length
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult ListLayers(Dictionary<string, object> args)
+        {
+            bool includeEmpty = args.TryGetValue("includeEmpty", out var ie) && Convert.ToBoolean(ie);
+
+            var layers = new List<object>();
+
+            for (int i = 0; i < 32; i++)
+            {
+                string layerName = LayerMask.LayerToName(i);
+
+                if (!includeEmpty && string.IsNullOrEmpty(layerName))
+                    continue;
+
+                layers.Add(new Dictionary<string, object>
+                {
+                    ["index"] = i,
+                    ["name"] = string.IsNullOrEmpty(layerName) ? "(empty)" : layerName,
+                    ["isBuiltin"] = i < 8
+                });
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["layers"] = layers,
+                        ["count"] = layers.Count
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult SetTag(Dictionary<string, object> args)
+        {
+            if (!args.TryGetValue("gameObjectPath", out var pathObj) || pathObj == null)
+                return CreateErrorResult("Missing required parameter: gameObjectPath");
+
+            if (!args.TryGetValue("tag", out var tagObj) || tagObj == null)
+                return CreateErrorResult("Missing required parameter: tag");
+
+            string gameObjectPath = pathObj.ToString();
+            string newTag = tagObj.ToString();
+            bool recursive = args.TryGetValue("recursive", out var r) && Convert.ToBoolean(r);
+
+            var go = GameObjectHelpers.FindGameObject(gameObjectPath);
+            if (go == null)
+                return CreateErrorResult($"GameObject not found: {gameObjectPath}");
+
+            // Vérifier que le tag existe
+            var validTags = InternalEditorUtility.tags;
+            if (!validTags.Contains(newTag))
+                return CreateErrorResult($"Tag '{newTag}' does not exist. Available tags: {string.Join(", ", validTags)}");
+
+            string oldTag = go.tag;
+            int count = 1;
+
+            Undo.RecordObject(go, "Set Tag");
+            go.tag = newTag;
+
+            if (recursive)
+            {
+                count = SetTagRecursive(go.transform, newTag);
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["success"] = true,
+                        ["gameObjectPath"] = gameObjectPath,
+                        ["oldTag"] = oldTag,
+                        ["newTag"] = newTag,
+                        ["objectsModified"] = count,
+                        ["message"] = $"Set tag to '{newTag}' on {count} object(s)"
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static int SetTagRecursive(Transform parent, string tag)
+        {
+            int count = 1;
+            foreach (Transform child in parent)
+            {
+                Undo.RecordObject(child.gameObject, "Set Tag");
+                child.gameObject.tag = tag;
+                count += SetTagRecursive(child, tag);
+            }
+            return count;
+        }
+
+        private static McpToolResult SetLayer(Dictionary<string, object> args)
+        {
+            if (!args.TryGetValue("gameObjectPath", out var pathObj) || pathObj == null)
+                return CreateErrorResult("Missing required parameter: gameObjectPath");
+
+            if (!args.TryGetValue("layer", out var layerObj) || layerObj == null)
+                return CreateErrorResult("Missing required parameter: layer");
+
+            string gameObjectPath = pathObj.ToString();
+            string layerName = layerObj.ToString();
+            bool recursive = args.TryGetValue("recursive", out var r) && Convert.ToBoolean(r);
+
+            var go = GameObjectHelpers.FindGameObject(gameObjectPath);
+            if (go == null)
+                return CreateErrorResult($"GameObject not found: {gameObjectPath}");
+
+            int layerIndex = LayerMask.NameToLayer(layerName);
+            if (layerIndex == -1)
+                return CreateErrorResult($"Layer '{layerName}' does not exist");
+
+            string oldLayer = LayerMask.LayerToName(go.layer);
+            int count = 1;
+
+            Undo.RecordObject(go, "Set Layer");
+            go.layer = layerIndex;
+
+            if (recursive)
+            {
+                count = SetLayerRecursive(go.transform, layerIndex);
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["success"] = true,
+                        ["gameObjectPath"] = gameObjectPath,
+                        ["oldLayer"] = oldLayer,
+                        ["newLayer"] = layerName,
+                        ["objectsModified"] = count,
+                        ["message"] = $"Set layer to '{layerName}' on {count} object(s)"
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static int SetLayerRecursive(Transform parent, int layer)
+        {
+            int count = 1;
+            foreach (Transform child in parent)
+            {
+                Undo.RecordObject(child.gameObject, "Set Layer");
+                child.gameObject.layer = layer;
+                count += SetLayerRecursive(child, layer);
+            }
+            return count;
         }
 
         #endregion
