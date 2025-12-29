@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using McpUnity.Server;
 
 namespace McpUnity.Editor
 {
@@ -15,14 +16,10 @@ namespace McpUnity.Editor
         // UI State
         private Vector2 _logScrollPosition;
         private Vector2 _mainScrollPosition;
-        private bool _showAdvancedSettings = false;
-        private bool _showLoggingSettings = false;
         private string _cachedLogs = "";
         private int _lastLogCount = 0;
 
-        // Server State (will be connected to actual server later)
-        private bool _isServerRunning = false;
-        private int _connectedClients = 0;
+        // Server State - synced with McpUnityServer
         private DateTime _serverStartTime;
 
         // Cached settings for UI
@@ -33,6 +30,7 @@ namespace McpUnity.Editor
         private bool _showNotifications;
         private int _maxLogEntries;
         private bool _logToFile;
+        private bool _logToConsole;
         private LogLevel _logLevel;
         private bool _useCustomPath;
         private string _customPath;
@@ -63,23 +61,13 @@ namespace McpUnity.Editor
             window.StartServer();
         }
 
-        [MenuItem("Tools/MCP Unity/Stop Server", priority = 102)]
-        public static void QuickStopServer()
-        {
-            var window = GetWindow<McpEditorWindow>("MCP Unity Server");
-            window.StopServer();
-        }
-
         private void OnEnable()
         {
             LoadSettings();
             McpServerLogger.Instance.OnLogAdded += OnLogAdded;
 
-            // Auto-start if configured
-            if (McpSettings.Instance.AutoStartServer && !_isServerRunning)
-            {
-                EditorApplication.delayCall += StartServer;
-            }
+            // Auto-start if configured (McpUnityServer handles this automatically)
+            // UI just reflects the server state
         }
 
         private void OnDisable()
@@ -102,6 +90,7 @@ namespace McpUnity.Editor
             _showNotifications = settings.ShowNotifications;
             _maxLogEntries = settings.MaxLogEntries;
             _logToFile = settings.LogToFile;
+            _logToConsole = settings.LogToConsole;
             _logLevel = settings.MinimumLogLevel;
             _useCustomPath = settings.UseCustomServerPath;
             _customPath = settings.CustomServerPath;
@@ -117,6 +106,7 @@ namespace McpUnity.Editor
             settings.ShowNotifications = _showNotifications;
             settings.MaxLogEntries = _maxLogEntries;
             settings.LogToFile = _logToFile;
+            settings.LogToConsole = _logToConsole;
             settings.MinimumLogLevel = _logLevel;
             settings.UseCustomServerPath = _useCustomPath;
             settings.CustomServerPath = _customPath;
@@ -209,8 +199,9 @@ namespace McpUnity.Editor
         {
             EditorGUILayout.BeginHorizontal();
 
-            var statusColor = _isServerRunning ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.8f, 0.2f, 0.2f);
-            var statusText = _isServerRunning ? "RUNNING" : "STOPPED";
+            bool isRunning = McpUnityServer.IsRunning;
+            var statusColor = isRunning ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.8f, 0.2f, 0.2f);
+            var statusText = isRunning ? "RUNNING" : "STOPPED";
 
             var originalColor = GUI.color;
             GUI.color = statusColor;
@@ -224,6 +215,9 @@ namespace McpUnity.Editor
 
         private void DrawServerTab()
         {
+            bool isRunning = McpUnityServer.IsRunning;
+            int connectedClients = McpUnityServer.ConnectedClientCount;
+
             // Server Status Section
             EditorGUILayout.BeginVertical(_boxStyle);
             EditorGUILayout.LabelField("Server Status", EditorStyles.boldLabel);
@@ -231,14 +225,14 @@ namespace McpUnity.Editor
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Status:", GUILayout.Width(120));
-            EditorGUILayout.LabelField(_isServerRunning ? "Running" : "Stopped");
+            EditorGUILayout.LabelField(isRunning ? "Running" : "Stopped");
             EditorGUILayout.EndHorizontal();
 
-            if (_isServerRunning)
+            if (isRunning)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("Connected Clients:", GUILayout.Width(120));
-                EditorGUILayout.LabelField(_connectedClients.ToString());
+                EditorGUILayout.LabelField(connectedClients.ToString());
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginHorizontal();
@@ -249,7 +243,7 @@ namespace McpUnity.Editor
 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("Endpoint:", GUILayout.Width(120));
-                string endpoint = $"ws://{(_allowRemote ? "0.0.0.0" : "localhost")}:{_port}";
+                string endpoint = $"ws://localhost:{McpUnityServer.Port}";
                 EditorGUILayout.SelectableLabel(endpoint, GUILayout.Height(18));
                 EditorGUILayout.EndHorizontal();
             }
@@ -263,22 +257,16 @@ namespace McpUnity.Editor
             EditorGUILayout.LabelField("Configuration", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
-            EditorGUI.BeginDisabledGroup(_isServerRunning);
+            EditorGUI.BeginDisabledGroup(isRunning);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Port:", GUILayout.Width(120));
-            _port = EditorGUILayout.IntField(_port);
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Allow Remote:", GUILayout.Width(120));
-            _allowRemote = EditorGUILayout.Toggle(_allowRemote);
-            EditorGUILayout.EndHorizontal();
-
-            if (_allowRemote)
+            int newPort = EditorGUILayout.IntField(McpUnityServer.Port);
+            if (newPort != McpUnityServer.Port)
             {
-                EditorGUILayout.HelpBox("Warning: Allowing remote connections exposes the server to external access. Use with caution.", MessageType.Warning);
+                McpUnityServer.Port = newPort;
             }
+            EditorGUILayout.EndHorizontal();
 
             EditorGUI.EndDisabledGroup();
 
@@ -289,7 +277,7 @@ namespace McpUnity.Editor
             // Control Buttons
             EditorGUILayout.BeginHorizontal();
 
-            if (_isServerRunning)
+            if (isRunning)
             {
                 GUI.backgroundColor = new Color(0.9f, 0.3f, 0.3f);
                 if (GUILayout.Button("Stop Server", GUILayout.Height(35)))
@@ -317,13 +305,15 @@ namespace McpUnity.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            // Apply changes button
+            // Auto-start toggle
             EditorGUILayout.Space(5);
-            if (GUILayout.Button("Save Configuration"))
+            EditorGUILayout.BeginHorizontal();
+            bool newAutoStart = EditorGUILayout.Toggle("Auto-start on Editor load", McpUnityServer.AutoStart);
+            if (newAutoStart != McpUnityServer.AutoStart)
             {
-                SaveSettings();
-                McpServerLogger.Instance.Info("Configuration saved");
+                McpUnityServer.AutoStart = newAutoStart;
             }
+            EditorGUILayout.EndHorizontal();
         }
 
         private void DrawClaudeConfigTab()
@@ -509,6 +499,16 @@ namespace McpUnity.Editor
             EditorGUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Log to Unity Console:", GUILayout.Width(150));
+            _logToConsole = EditorGUILayout.Toggle(_logToConsole);
+            EditorGUILayout.EndHorizontal();
+
+            if (!_logToConsole)
+            {
+                EditorGUILayout.HelpBox("MCP logs are hidden from Unity Console. View them in the Logs tab.", MessageType.Info);
+            }
+
+            EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Max Log Entries:", GUILayout.Width(150));
             _maxLogEntries = EditorGUILayout.IntField(_maxLogEntries);
             EditorGUILayout.EndHorizontal();
@@ -604,12 +604,11 @@ namespace McpUnity.Editor
         {
             SaveSettings();
 
-            // TODO: Connect to actual McpUnityServer when implemented
-            _isServerRunning = true;
+            // Call the real server
+            McpUnityServer.Start();
             _serverStartTime = DateTime.Now;
-            _connectedClients = 0;
 
-            McpServerLogger.Instance.Info($"Server started on port {_port}");
+            McpServerLogger.Instance.Info($"Server started on port {McpUnityServer.Port}");
 
             if (_showNotifications)
             {
@@ -621,9 +620,8 @@ namespace McpUnity.Editor
 
         private void StopServer()
         {
-            // TODO: Connect to actual McpUnityServer when implemented
-            _isServerRunning = false;
-            _connectedClients = 0;
+            // Call the real server
+            McpUnityServer.Stop();
 
             McpServerLogger.Instance.Info("Server stopped");
 

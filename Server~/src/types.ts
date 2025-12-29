@@ -46,6 +46,7 @@ export const ToolDefinitionSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   inputSchema: ToolInputSchemaSchema,
+  defer_loading: z.boolean().optional(),  // For Tool Search optimization - deferred tools load on-demand
 });
 
 export type ToolDefinition = z.infer<typeof ToolDefinitionSchema>;

@@ -123,19 +123,22 @@ namespace McpUnity.Editor
                 WriteToFile(entry);
             }
 
-            // Also log to Unity console
-            switch (level)
+            // Also log to Unity console (if enabled)
+            if (McpSettings.Instance.LogToConsole)
             {
-                case LogLevel.Debug:
-                case LogLevel.Info:
-                    UnityEngine.Debug.Log($"[MCP] {message}");
-                    break;
-                case LogLevel.Warning:
-                    UnityEngine.Debug.LogWarning($"[MCP] {message}");
-                    break;
-                case LogLevel.Error:
-                    UnityEngine.Debug.LogError($"[MCP] {message}");
-                    break;
+                switch (level)
+                {
+                    case LogLevel.Debug:
+                    case LogLevel.Info:
+                        UnityEngine.Debug.Log($"[MCP] {message}");
+                        break;
+                    case LogLevel.Warning:
+                        UnityEngine.Debug.LogWarning($"[MCP] {message}");
+                        break;
+                    case LogLevel.Error:
+                        UnityEngine.Debug.LogError($"[MCP] {message}");
+                        break;
+                }
             }
 
             // Notify listeners

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mcp-unity": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/juliankerignard/Documents/Other/Learn/Unity/CodzWClaude/Assets/Server~/build/index.js"
+      ],
+      "env": {}
+    }
+  }
+}

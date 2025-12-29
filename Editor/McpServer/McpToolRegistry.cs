@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using McpUnity.Protocol;
+using McpUnity.Editor;
 
 namespace McpUnity.Server
 {
@@ -37,7 +38,7 @@ namespace McpUnity.Server
             _toolDefinitions[definition.name] = definition;
             _toolHandlers[definition.name] = handler;
 
-            Debug.Log($"[MCP Registry] Registered tool: {definition.name}");
+            McpDebug.Log($"[MCP Registry] Registered tool: {definition.name}");
         }
 
         /// <summary>
@@ -52,7 +53,7 @@ namespace McpUnity.Server
 
             if (removed)
             {
-                Debug.Log($"[MCP Registry] Unregistered tool: {name}");
+                McpDebug.Log($"[MCP Registry] Unregistered tool: {name}");
             }
 
             return removed;
@@ -111,7 +112,7 @@ namespace McpUnity.Server
 
             try
             {
-                Debug.Log($"[MCP Registry] Executing tool: {name}");
+                McpDebug.Log($"[MCP Registry] Executing tool: {name}");
                 return handler(arguments ?? new Dictionary<string, object>());
             }
             catch (Exception ex)
@@ -150,7 +151,7 @@ namespace McpUnity.Server
         {
             _toolDefinitions.Clear();
             _toolHandlers.Clear();
-            Debug.Log("[MCP Registry] Cleared all tools");
+            McpDebug.Log("[MCP Registry] Cleared all tools");
         }
 
         /// <summary>

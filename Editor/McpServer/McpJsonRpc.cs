@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using McpUnity.Protocol;
+using McpUnity.Editor;
 
 namespace McpUnity.Server
 {
@@ -174,7 +175,7 @@ namespace McpUnity.Server
         private static JsonRpcResponse HandleInitialized(JsonRpcRequest request)
         {
             // This is a notification, no response needed
-            Debug.Log("[MCP Unity] Client initialized successfully");
+            McpDebug.Log("[MCP Unity] Client initialized successfully");
             return JsonRpcResponse.Success(request.id, new { });
         }
 
@@ -240,7 +241,7 @@ namespace McpUnity.Server
                     );
                 }
 
-                Debug.Log($"[MCP JSON-RPC] Executing tool: {toolName} with {arguments.Count} arguments");
+                McpDebug.Log($"[MCP JSON-RPC] Executing tool: {toolName} with {arguments.Count} arguments");
 
                 var result = _toolRegistry.ExecuteTool(toolName, arguments);
                 return JsonRpcResponse.Success(request.id, result);
@@ -377,7 +378,7 @@ namespace McpUnity.Server
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[JsonHelper] Failed to parse JSON: {ex.Message}");
+                McpDebug.LogWarning($"[JsonHelper] Failed to parse JSON: {ex.Message}");
                 return null;
             }
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using McpUnity.Protocol;
+using McpUnity.Editor;
 
 namespace McpUnity.Server
 {
@@ -36,7 +37,7 @@ namespace McpUnity.Server
             _resourceDefinitions[definition.uri] = definition;
             _resourceHandlers[definition.uri] = handler;
 
-            Debug.Log($"[MCP Registry] Registered resource: {definition.uri}");
+            McpDebug.Log($"[MCP Registry] Registered resource: {definition.uri}");
         }
 
         /// <summary>
@@ -51,7 +52,7 @@ namespace McpUnity.Server
 
             if (removed)
             {
-                Debug.Log($"[MCP Registry] Unregistered resource: {uri}");
+                McpDebug.Log($"[MCP Registry] Unregistered resource: {uri}");
             }
 
             return removed;
@@ -103,7 +104,7 @@ namespace McpUnity.Server
 
             try
             {
-                Debug.Log($"[MCP Registry] Reading resource: {uri}");
+                McpDebug.Log($"[MCP Registry] Reading resource: {uri}");
                 var content = handler();
 
                 return new McpResourceResult
@@ -159,7 +160,7 @@ namespace McpUnity.Server
         {
             _resourceDefinitions.Clear();
             _resourceHandlers.Clear();
-            Debug.Log("[MCP Registry] Cleared all resources");
+            McpDebug.Log("[MCP Registry] Cleared all resources");
         }
     }
 }

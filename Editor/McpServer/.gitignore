@@ -1,0 +1,23 @@
+# Unity generated
+*.meta
+
+# IDE
+.idea/
+.vs/
+*.sln
+*.csproj
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Flow cache (if used locally)
+.claude-flow/
+
+# MCP Cache
+.mcp-cache/
+
+# Logs
+*.log
+Logs/
