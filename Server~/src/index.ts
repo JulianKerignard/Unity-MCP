@@ -537,6 +537,173 @@ BEST PRACTICES:
         required: ["controllerPath", "fromState", "toState"]
       }
     },
+    // Advanced Animator tools - Blend Trees
+    {
+      name: "unity_create_blend_tree",
+      description: "Create a 1D or 2D Blend Tree state in an Animator Controller",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          stateName: { type: "string", description: "Name for the blend tree state" },
+          blendType: {
+            type: "string",
+            description: "Blend type: '1D', '2DSimpleDirectional', '2DFreeformDirectional', '2DFreeformCartesian'",
+            enum: ["1D", "2DSimpleDirectional", "2DFreeformDirectional", "2DFreeformCartesian"]
+          },
+          blendParameter: { type: "string", description: "Parameter name for X axis blending" },
+          blendParameterY: { type: "string", description: "Parameter name for Y axis (2D only)" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" }
+        },
+        required: ["controllerPath", "stateName", "blendParameter"]
+      }
+    },
+    {
+      name: "unity_add_blend_motion",
+      description: "Add a motion (AnimationClip) to a Blend Tree",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          blendTreeState: { type: "string", description: "Name of the blend tree state" },
+          motionPath: { type: "string", description: "Path to the AnimationClip asset" },
+          threshold: { type: "number", description: "Position on blend axis (for 1D blend trees)" },
+          positionX: { type: "number", description: "X position (for 2D blend trees)" },
+          positionY: { type: "number", description: "Y position (for 2D blend trees)" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" }
+        },
+        required: ["controllerPath", "blendTreeState", "motionPath"]
+      }
+    },
+    // Advanced Animator tools - Deletion
+    {
+      name: "unity_delete_animator_state",
+      description: "Delete a state from an Animator Controller",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          stateName: { type: "string", description: "Name of the state to delete" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" }
+        },
+        required: ["controllerPath", "stateName"]
+      }
+    },
+    {
+      name: "unity_delete_animator_transition",
+      description: "Delete a transition between states in an Animator Controller",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          fromState: { type: "string", description: "Source state name (use 'AnyState' for any state transitions)" },
+          toState: { type: "string", description: "Destination state name" },
+          transitionIndex: { type: "integer", description: "Index of transition if multiple exist (default: 0)" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" }
+        },
+        required: ["controllerPath", "fromState", "toState"]
+      }
+    },
+    // Advanced Animator tools - Modification
+    {
+      name: "unity_modify_animator_state",
+      description: "Modify properties of an existing animator state",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          stateName: { type: "string", description: "Name of the state to modify" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" },
+          newName: { type: "string", description: "New name for the state" },
+          motion: { type: "string", description: "Path to new AnimationClip" },
+          speed: { type: "number", description: "Playback speed multiplier" },
+          speedParameter: { type: "string", description: "Parameter name for speed control" },
+          cycleOffset: { type: "number", description: "Cycle offset (0-1)" },
+          mirror: { type: "boolean", description: "Mirror the animation" },
+          writeDefaultValues: { type: "boolean", description: "Write default values on exit" }
+        },
+        required: ["controllerPath", "stateName"]
+      }
+    },
+    {
+      name: "unity_modify_transition",
+      description: "Modify properties of an existing animator transition",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          fromState: { type: "string", description: "Source state name" },
+          toState: { type: "string", description: "Destination state name" },
+          transitionIndex: { type: "integer", description: "Index if multiple transitions exist (default: 0)" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" },
+          hasExitTime: { type: "boolean", description: "Whether transition has exit time" },
+          exitTime: { type: "number", description: "Exit time normalized (0-1+)" },
+          duration: { type: "number", description: "Transition blend duration" },
+          offset: { type: "number", description: "Destination state time offset" },
+          interruptionSource: {
+            type: "string",
+            description: "Interruption source",
+            enum: ["None", "Source", "Destination", "SourceThenDestination", "DestinationThenSource"]
+          },
+          canTransitionToSelf: { type: "boolean", description: "Can transition to same state" }
+        },
+        required: ["controllerPath", "fromState", "toState"]
+      }
+    },
+    // Advanced Animator tools - Animation Clips
+    {
+      name: "unity_list_animation_clips",
+      description: "List all animation clips in the project with filtering options",
+      inputSchema: {
+        type: "object",
+        properties: {
+          searchPath: { type: "string", description: "Folder to search in (default: 'Assets')" },
+          nameFilter: { type: "string", description: "Filter by clip name pattern" },
+          avatarFilter: {
+            type: "string",
+            description: "Filter by avatar type",
+            enum: ["Humanoid", "Generic", "Legacy"]
+          }
+        }
+      }
+    },
+    {
+      name: "unity_get_clip_info",
+      description: "Get detailed information about an animation clip including events and curves",
+      inputSchema: {
+        type: "object",
+        properties: {
+          clipPath: { type: "string", description: "Path to the AnimationClip asset" }
+        },
+        required: ["clipPath"]
+      }
+    },
+    // Advanced Animator tools - Validation
+    {
+      name: "unity_validate_animator",
+      description: "Analyze an animator controller for issues (missing motions, orphan states, unused parameters)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" }
+        },
+        required: ["controllerPath"]
+      }
+    },
+    {
+      name: "unity_get_animator_flow",
+      description: "Trace possible paths through an animator to understand state machine flow",
+      inputSchema: {
+        type: "object",
+        properties: {
+          controllerPath: { type: "string", description: "Path to the AnimatorController asset" },
+          fromState: { type: "string", description: "Starting state (default: Entry)" },
+          maxDepth: { type: "integer", description: "Maximum traversal depth (default: 10)" },
+          layerIndex: { type: "integer", description: "Layer index (default: 0)" }
+        },
+        required: ["controllerPath"]
+      }
+    },
     // Asset Browser tools
     {
       name: "unity_search_assets",

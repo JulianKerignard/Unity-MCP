@@ -695,6 +695,176 @@ namespace McpUnity.Server
                 }
             }, AddAnimatorTransition);
 
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_validate_animator",
+                description = "Validate an Animator Controller for common issues like missing motions, orphan states, dead ends, unused parameters, and duplicate state names",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset (e.g., 'Assets/Animations/Player.controller')"
+                        }
+                    },
+                    required = new List<string> { "controllerPath" }
+                }
+            }, ValidateAnimator);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_get_animator_flow",
+                description = "Trace possible paths through an Animator Controller from a given state, showing reachable and unreachable states",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset"
+                        },
+                        ["fromState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Starting state name (default: 'Entry' which uses the default state)"
+                        },
+                        ["maxDepth"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Maximum path depth to trace (default: 10)"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index to analyze (default: 0)"
+                        }
+                    },
+                    required = new List<string> { "controllerPath" }
+                }
+            }, GetAnimatorFlow);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_delete_animator_state",
+                description = "Delete a state from an Animator Controller. Removes the state and all its transitions.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset (e.g., 'Assets/Animations/Player.controller')"
+                        },
+                        ["stateName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name of the state to delete"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "stateName" }
+                }
+            }, DeleteAnimatorState);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_delete_animator_transition",
+                description = "Delete a transition between states in an Animator Controller. Supports deleting transitions from regular states or AnyState.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset (e.g., 'Assets/Animations/Player.controller')"
+                        },
+                        ["fromState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Source state name. Use 'AnyState' or 'Any' for AnyState transitions"
+                        },
+                        ["toState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Destination state name"
+                        },
+                        ["transitionIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Index of the transition if multiple exist between the same states (default: 0)"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "fromState", "toState" }
+                }
+            }, DeleteAnimatorTransition);
+
+            // Animation Clip tools
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_list_animation_clips",
+                description = "List all AnimationClips in the project with optional filtering by name and avatar type",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["searchPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Folder path to search in (default: 'Assets')"
+                        },
+                        ["nameFilter"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Filter clips by name (case-insensitive contains match)"
+                        },
+                        ["avatarFilter"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Filter by avatar type: 'Humanoid', 'Generic', or 'Legacy'",
+                            @enum = new List<string> { "Humanoid", "Generic", "Legacy" }
+                        }
+                    }
+                }
+            }, ListAnimationClips);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_get_clip_info",
+                description = "Get detailed information about an AnimationClip including events, curves, and properties",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["clipPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimationClip asset (e.g., 'Assets/Animations/Run.anim')"
+                        }
+                    },
+                    required = new List<string> { "clipPath" }
+                }
+            }, GetClipInfo);
+
             // Asset Browser tools
             _toolRegistry.RegisterTool(new McpToolDefinition
             {
@@ -1134,7 +1304,7 @@ namespace McpUnity.Server
                             description = "'single' (replace current) or 'additive' (add alongside). Default: 'single'"
                         }
                     },
-                    required = new[] { "sceneName" }
+                    required = new List<string> { "sceneName" }
                 }
             }, CreateScene);
 
@@ -1163,7 +1333,7 @@ namespace McpUnity.Server
                             description = "Keep GameObject connected as prefab instance (default: true)"
                         }
                     },
-                    required = new[] { "gameObjectPath", "savePath" }
+                    required = new List<string> { "gameObjectPath", "savePath" }
                 }
             }, CreatePrefab);
 
@@ -1187,7 +1357,7 @@ namespace McpUnity.Server
                             description = "'completely' (all nested) or 'root' (outermost only). Default: 'completely'"
                         }
                     },
-                    required = new[] { "gameObjectPath" }
+                    required = new List<string> { "gameObjectPath" }
                 }
             }, UnpackPrefab);
 
@@ -1206,7 +1376,7 @@ namespace McpUnity.Server
                             description = "Modified prefab instance in hierarchy"
                         }
                     },
-                    required = new[] { "gameObjectPath" }
+                    required = new List<string> { "gameObjectPath" }
                 }
             }, ApplyPrefabOverrides);
 
@@ -1395,6 +1565,235 @@ namespace McpUnity.Server
                     required = new List<string> { "name", "savePath" }
                 }
             }, CreateMaterial);
+
+            // Blend Tree tools
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_create_blend_tree",
+                description = "Create a 1D or 2D Blend Tree state in an Animator Controller. Blend Trees allow blending between multiple animations based on parameter values.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset (e.g., 'Assets/Animations/Player.controller')"
+                        },
+                        ["stateName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name for the new Blend Tree state"
+                        },
+                        ["blendType"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Type of blend tree: '1D', '2DSimpleDirectional', '2DFreeformDirectional', or '2DFreeformCartesian'",
+                            @enum = new List<string> { "1D", "2DSimpleDirectional", "2DFreeformDirectional", "2DFreeformCartesian" }
+                        },
+                        ["blendParameter"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Parameter name for X axis blending (must exist in controller)"
+                        },
+                        ["blendParameterY"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Parameter name for Y axis (required for 2D blend types)"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "stateName", "blendParameter" }
+                }
+            }, CreateBlendTree);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_add_blend_motion",
+                description = "Add a motion (AnimationClip) to an existing Blend Tree. For 1D trees use threshold, for 2D trees use positionX/Y.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset"
+                        },
+                        ["blendTreeState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name of the Blend Tree state"
+                        },
+                        ["motionPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimationClip asset"
+                        },
+                        ["threshold"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Threshold value for 1D blend trees (position on blend axis)"
+                        },
+                        ["positionX"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "X position for 2D blend trees"
+                        },
+                        ["positionY"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Y position for 2D blend trees"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "blendTreeState", "motionPath" }
+                }
+            }, AddBlendMotion);
+
+            // Modification tools
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_modify_animator_state",
+                description = "Modify properties of an existing animator state (speed, motion, name, etc.)",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset"
+                        },
+                        ["stateName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name of the state to modify"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        },
+                        ["newName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "New name for the state"
+                        },
+                        ["motion"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to new AnimationClip"
+                        },
+                        ["speed"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Playback speed multiplier"
+                        },
+                        ["speedParameter"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Parameter name to control speed"
+                        },
+                        ["cycleOffset"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Cycle offset (0-1)"
+                        },
+                        ["mirror"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Mirror the animation"
+                        },
+                        ["writeDefaultValues"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Write default values on exit"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "stateName" }
+                }
+            }, ModifyAnimatorState);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_modify_transition",
+                description = "Modify properties of an existing animator transition (duration, exit time, interruption, etc.)",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["controllerPath"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Path to the AnimatorController asset"
+                        },
+                        ["fromState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Source state name (or 'AnyState')"
+                        },
+                        ["toState"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Destination state name"
+                        },
+                        ["transitionIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Index if multiple transitions exist (default: 0)"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Layer index (default: 0)"
+                        },
+                        ["hasExitTime"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Has exit time"
+                        },
+                        ["exitTime"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Exit time (normalized 0-1+)"
+                        },
+                        ["duration"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Transition duration"
+                        },
+                        ["offset"] = new McpPropertySchema
+                        {
+                            type = "number",
+                            description = "Destination state offset"
+                        },
+                        ["interruptionSource"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Interruption source: 'None', 'Source', 'Destination', 'SourceThenDestination', 'DestinationThenSource'"
+                        },
+                        ["canTransitionToSelf"] = new McpPropertySchema
+                        {
+                            type = "boolean",
+                            description = "Can transition to self"
+                        }
+                    },
+                    required = new List<string> { "controllerPath", "fromState", "toState" }
+                }
+            }, ModifyTransition);
         }
 
         private static void RegisterDefaultResources()
@@ -2601,6 +3000,307 @@ namespace McpUnity.Server
             return result;
         }
 
+        private static void ValidateStateMachine(AnimatorStateMachine sm, int layerIndex,
+            AnimatorController controller, List<object> errors, List<object> warnings,
+            HashSet<string> usedParams)
+        {
+            // Get all states that have incoming transitions
+            var statesWithIncomingTransitions = new HashSet<string>();
+            if (sm.defaultState != null)
+                statesWithIncomingTransitions.Add(sm.defaultState.name);
+
+            // Collect incoming transitions from anyState
+            foreach (var anyTrans in sm.anyStateTransitions)
+            {
+                if (anyTrans.destinationState != null)
+                    statesWithIncomingTransitions.Add(anyTrans.destinationState.name);
+            }
+
+            // Validate each state
+            foreach (var childState in sm.states)
+            {
+                var state = childState.state;
+
+                // Check for missing motion
+                if (state.motion == null)
+                {
+                    warnings.Add(new
+                    {
+                        type = "MissingMotion",
+                        layer = layerIndex,
+                        state = state.name,
+                        message = $"State '{state.name}' has no motion assigned"
+                    });
+                }
+
+                // Collect outgoing transitions and their destinations
+                bool hasOutgoingTransitions = state.transitions.Length > 0;
+
+                foreach (var transition in state.transitions)
+                {
+                    // Mark destination as having incoming transition
+                    if (transition.destinationState != null)
+                        statesWithIncomingTransitions.Add(transition.destinationState.name);
+
+                    // Check for transition without conditions (warning)
+                    if (transition.conditions.Length == 0 && !transition.hasExitTime)
+                    {
+                        warnings.Add(new
+                        {
+                            type = "TransitionWithoutCondition",
+                            layer = layerIndex,
+                            state = state.name,
+                            to = transition.destinationState?.name ?? "Exit",
+                            message = $"Transition from '{state.name}' to '{transition.destinationState?.name ?? "Exit"}' has no conditions and no exit time"
+                        });
+                    }
+
+                    // Collect used parameters
+                    foreach (var cond in transition.conditions)
+                    {
+                        usedParams.Add(cond.parameter);
+                    }
+                }
+
+                // Check for dead-end state (no outgoing transitions)
+                if (!hasOutgoingTransitions && state.name != "Exit")
+                {
+                    warnings.Add(new
+                    {
+                        type = "DeadEndState",
+                        layer = layerIndex,
+                        state = state.name,
+                        message = $"State '{state.name}' has no outgoing transitions (dead end)"
+                    });
+                }
+            }
+
+            // Check for orphan states (no incoming transitions, not default state)
+            foreach (var childState in sm.states)
+            {
+                var state = childState.state;
+                if (!statesWithIncomingTransitions.Contains(state.name))
+                {
+                    warnings.Add(new
+                    {
+                        type = "OrphanState",
+                        layer = layerIndex,
+                        state = state.name,
+                        message = $"State '{state.name}' has no incoming transitions (orphan)"
+                    });
+                }
+            }
+
+            // Recurse into sub-state machines
+            foreach (var subMachine in sm.stateMachines)
+            {
+                ValidateStateMachine(subMachine.stateMachine, layerIndex, controller, errors, warnings, usedParams);
+            }
+        }
+
+        private static void CollectStateNames(AnimatorStateMachine sm, Dictionary<string, int> stateNames)
+        {
+            foreach (var childState in sm.states)
+            {
+                var name = childState.state.name;
+                if (stateNames.ContainsKey(name))
+                    stateNames[name]++;
+                else
+                    stateNames[name] = 1;
+            }
+
+            foreach (var subMachine in sm.stateMachines)
+            {
+                CollectStateNames(subMachine.stateMachine, stateNames);
+            }
+        }
+
+        private static void CollectAllStateNames(AnimatorStateMachine sm, HashSet<string> stateNames)
+        {
+            foreach (var childState in sm.states)
+            {
+                stateNames.Add(childState.state.name);
+            }
+
+            foreach (var subMachine in sm.stateMachines)
+            {
+                CollectAllStateNames(subMachine.stateMachine, stateNames);
+            }
+        }
+
+        private static int CountStates(AnimatorStateMachine sm)
+        {
+            int count = sm.states.Length;
+            foreach (var subMachine in sm.stateMachines)
+            {
+                count += CountStates(subMachine.stateMachine);
+            }
+            return count;
+        }
+
+        private static int CountTransitions(AnimatorStateMachine sm)
+        {
+            int count = sm.anyStateTransitions.Length;
+            foreach (var childState in sm.states)
+            {
+                count += childState.state.transitions.Length;
+            }
+            foreach (var subMachine in sm.stateMachines)
+            {
+                count += CountTransitions(subMachine.stateMachine);
+            }
+            return count;
+        }
+
+        private static bool IsParameterUsedInTransitions(AnimatorController controller, string paramName)
+        {
+            foreach (var layer in controller.layers)
+            {
+                if (IsParameterUsedInStateMachine(layer.stateMachine, paramName))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool IsParameterUsedInStateMachine(AnimatorStateMachine sm, string paramName)
+        {
+            // Check anyState transitions
+            foreach (var transition in sm.anyStateTransitions)
+            {
+                foreach (var cond in transition.conditions)
+                {
+                    if (cond.parameter == paramName)
+                        return true;
+                }
+            }
+
+            // Check state transitions
+            foreach (var childState in sm.states)
+            {
+                foreach (var transition in childState.state.transitions)
+                {
+                    foreach (var cond in transition.conditions)
+                    {
+                        if (cond.parameter == paramName)
+                            return true;
+                    }
+                }
+            }
+
+            // Recurse into sub-state machines
+            foreach (var subMachine in sm.stateMachines)
+            {
+                if (IsParameterUsedInStateMachine(subMachine.stateMachine, paramName))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void TracePaths(AnimatorStateMachine sm, AnimatorState current,
+            List<string> currentPath, List<string> currentConditions, int depth, int maxDepth,
+            List<object> allPaths, HashSet<string> visited, HashSet<string> reachableStates)
+        {
+            // Mark current state as reachable
+            reachableStates.Add(current.name);
+
+            // Check depth limit
+            if (depth >= maxDepth)
+            {
+                allPaths.Add(new
+                {
+                    sequence = new List<string>(currentPath),
+                    conditions = new List<string>(currentConditions),
+                    truncated = true
+                });
+                return;
+            }
+
+            // If no outgoing transitions, record this path
+            if (current.transitions.Length == 0)
+            {
+                allPaths.Add(new
+                {
+                    sequence = new List<string>(currentPath),
+                    conditions = new List<string>(currentConditions),
+                    truncated = false
+                });
+                return;
+            }
+
+            // Explore each transition
+            foreach (var transition in current.transitions)
+            {
+                var destState = transition.destinationState;
+                if (destState == null) continue;
+
+                // Build condition string
+                var conditionStr = BuildConditionString(transition);
+
+                // Check for cycle
+                var visitKey = $"{current.name}->{destState.name}";
+                if (visited.Contains(visitKey))
+                {
+                    // Record path with cycle indicator
+                    var cyclePath = new List<string>(currentPath) { $"{destState.name} (cycle)" };
+                    var cycleConds = new List<string>(currentConditions) { conditionStr };
+                    allPaths.Add(new
+                    {
+                        sequence = cyclePath,
+                        conditions = cycleConds,
+                        truncated = false,
+                        hasCycle = true
+                    });
+                    continue;
+                }
+
+                // Add to path and recurse
+                visited.Add(visitKey);
+                currentPath.Add(destState.name);
+                currentConditions.Add(conditionStr);
+
+                TracePaths(sm, destState, currentPath, currentConditions, depth + 1, maxDepth, allPaths, visited, reachableStates);
+
+                // Backtrack
+                currentPath.RemoveAt(currentPath.Count - 1);
+                currentConditions.RemoveAt(currentConditions.Count - 1);
+                visited.Remove(visitKey);
+            }
+        }
+
+        private static string BuildConditionString(AnimatorStateTransition transition)
+        {
+            if (transition.conditions.Length == 0)
+            {
+                if (transition.hasExitTime)
+                    return $"exitTime >= {transition.exitTime:F2}";
+                return "(no condition)";
+            }
+
+            var parts = new List<string>();
+            foreach (var cond in transition.conditions)
+            {
+                string op;
+                switch (cond.mode)
+                {
+                    case AnimatorConditionMode.Greater: op = ">"; break;
+                    case AnimatorConditionMode.Less: op = "<"; break;
+                    case AnimatorConditionMode.Equals: op = "=="; break;
+                    case AnimatorConditionMode.NotEqual: op = "!="; break;
+                    case AnimatorConditionMode.If: op = "== true"; break;
+                    case AnimatorConditionMode.IfNot: op = "== false"; break;
+                    default: op = "?"; break;
+                }
+
+                if (cond.mode == AnimatorConditionMode.If || cond.mode == AnimatorConditionMode.IfNot)
+                    parts.Add($"{cond.parameter} {op}");
+                else
+                    parts.Add($"{cond.parameter} {op} {cond.threshold}");
+            }
+
+            return string.Join(" && ", parts);
+        }
+
         #endregion
 
         #region Animator Controller Handlers
@@ -3034,6 +3734,961 @@ namespace McpUnity.Server
                             duration = transitionDuration,
                             conditions = addedConditions
                         }
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult ValidateAnimator(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            var errors = new List<object>();
+            var warnings = new List<object>();
+            var usedParams = new HashSet<string>();
+            int totalStates = 0;
+            int totalTransitions = 0;
+
+            // Validate each layer
+            for (int layerIndex = 0; layerIndex < controller.layers.Length; layerIndex++)
+            {
+                var layer = controller.layers[layerIndex];
+                var sm = layer.stateMachine;
+
+                ValidateStateMachine(sm, layerIndex, controller, errors, warnings, usedParams);
+                totalStates += CountStates(sm);
+                totalTransitions += CountTransitions(sm);
+
+                // Check for duplicate state names within the layer
+                var stateNames = new Dictionary<string, int>();
+                CollectStateNames(sm, stateNames);
+                foreach (var kvp in stateNames)
+                {
+                    if (kvp.Value > 1)
+                    {
+                        errors.Add(new
+                        {
+                            type = "DuplicateStateName",
+                            layer = layerIndex,
+                            state = kvp.Key,
+                            message = $"State name '{kvp.Key}' appears {kvp.Value} times in layer {layerIndex}"
+                        });
+                    }
+                }
+            }
+
+            // Check for unused parameters
+            foreach (var param in controller.parameters)
+            {
+                if (!usedParams.Contains(param.name))
+                {
+                    if (!IsParameterUsedInTransitions(controller, param.name))
+                    {
+                        warnings.Add(new
+                        {
+                            type = "UnusedParameter",
+                            parameter = param.name,
+                            message = $"Parameter '{param.name}' is never used in any transition condition"
+                        });
+                    }
+                }
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        isValid = errors.Count == 0,
+                        errors = errors,
+                        warnings = warnings,
+                        stats = new
+                        {
+                            totalStates = totalStates,
+                            totalTransitions = totalTransitions,
+                            totalParameters = controller.parameters.Length,
+                            layers = controller.layers.Length
+                        }
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult GetAnimatorFlow(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var fromState = args.GetValueOrDefault("fromState")?.ToString() ?? "Entry";
+            int maxDepth = 10;
+            if (args.TryGetValue("maxDepth", out var depthObj) && depthObj != null)
+                int.TryParse(depthObj.ToString(), out maxDepth);
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                int.TryParse(layerObj.ToString(), out layerIndex);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} out of range");
+
+            var sm = controller.layers[layerIndex].stateMachine;
+            var allPaths = new List<object>();
+            var reachableStates = new HashSet<string>();
+            var anyStateTargets = new List<string>();
+
+            // Get AnyState targets
+            foreach (var transition in sm.anyStateTransitions)
+            {
+                if (transition.destinationState != null)
+                    anyStateTargets.Add(transition.destinationState.name);
+            }
+
+            // Determine starting state
+            AnimatorState startState = null;
+            if (fromState.ToLower() == "entry")
+            {
+                startState = sm.defaultState;
+                if (startState == null)
+                    return McpToolResult.Error("No default state defined in this layer");
+            }
+            else
+            {
+                startState = FindStateByName(sm, fromState);
+                if (startState == null)
+                    return McpToolResult.Error($"State '{fromState}' not found in layer {layerIndex}");
+            }
+
+            // Trace paths using BFS
+            var pathSequence = new List<string> { startState.name };
+            var conditionSequence = new List<string> { "(start)" };
+            var visited = new HashSet<string>();
+
+            TracePaths(sm, startState, pathSequence, conditionSequence, 0, maxDepth, allPaths, visited, reachableStates);
+
+            // Find all states in the layer
+            var allStates = new HashSet<string>();
+            CollectAllStateNames(sm, allStates);
+
+            // Calculate unreachable states
+            var unreachableStates = new List<string>();
+            foreach (var state in allStates)
+            {
+                if (!reachableStates.Contains(state) && state != startState.name)
+                {
+                    // Check if reachable via AnyState
+                    if (!anyStateTargets.Contains(state))
+                        unreachableStates.Add(state);
+                }
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        paths = allPaths,
+                        reachableStates = reachableStates.ToList(),
+                        unreachableStates = unreachableStates,
+                        anyStateTargets = anyStateTargets
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult DeleteAnimatorState(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var stateName = args.GetValueOrDefault("stateName")?.ToString();
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                int.TryParse(layerObj.ToString(), out layerIndex);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(stateName))
+                return McpToolResult.Error("stateName is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} out of range. Controller has {controller.layers.Length} layers");
+
+            var stateMachine = controller.layers[layerIndex].stateMachine;
+
+            // Find the state to delete
+            var stateToDelete = FindStateByName(stateMachine, stateName);
+            if (stateToDelete == null)
+                return McpToolResult.Error($"State '{stateName}' not found in layer {layerIndex}");
+
+            // Check if it's the default state
+            bool wasDefaultState = stateMachine.defaultState == stateToDelete;
+
+            Undo.RecordObject(stateMachine, "Delete Animator State");
+            stateMachine.RemoveState(stateToDelete);
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Deleted state '{stateName}' from layer {layerIndex}",
+                        deletedState = stateName,
+                        wasDefaultState = wasDefaultState,
+                        controllerPath = controllerPath
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult DeleteAnimatorTransition(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var fromState = args.GetValueOrDefault("fromState")?.ToString();
+            var toState = args.GetValueOrDefault("toState")?.ToString();
+            int transitionIndex = 0;
+            if (args.TryGetValue("transitionIndex", out var transIdxObj) && transIdxObj != null)
+                int.TryParse(transIdxObj.ToString(), out transitionIndex);
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                int.TryParse(layerObj.ToString(), out layerIndex);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(fromState))
+                return McpToolResult.Error("fromState is required");
+            if (string.IsNullOrEmpty(toState))
+                return McpToolResult.Error("toState is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} out of range");
+
+            var stateMachine = controller.layers[layerIndex].stateMachine;
+
+            Undo.RecordObject(controller, "Delete Animator Transition");
+
+            bool isAnyState = fromState.ToLower() == "any" || fromState.ToLower() == "anystate";
+
+            if (isAnyState)
+            {
+                // Handle AnyState transition
+                var anyTransitions = stateMachine.anyStateTransitions;
+                AnimatorStateTransition toRemove = null;
+
+                // Find the transition to the specified destination state
+                foreach (var t in anyTransitions)
+                {
+                    if (t.destinationState != null && t.destinationState.name == toState)
+                    {
+                        toRemove = t;
+                        break;
+                    }
+                }
+
+                if (toRemove == null)
+                    return McpToolResult.Error($"No AnyState transition to '{toState}' found in layer {layerIndex}");
+
+                Undo.RecordObject(stateMachine, "Delete AnyState Transition");
+                stateMachine.RemoveAnyStateTransition(toRemove);
+            }
+            else
+            {
+                // Handle regular state transition
+                var srcState = FindStateByName(stateMachine, fromState);
+                if (srcState == null)
+                    return McpToolResult.Error($"Source state '{fromState}' not found in layer {layerIndex}");
+
+                var transitions = srcState.transitions;
+                if (transitions == null || transitions.Length == 0)
+                    return McpToolResult.Error($"State '{fromState}' has no transitions");
+
+                // Find the transition to the specified destination state
+                AnimatorStateTransition toRemove = null;
+                int matchCount = 0;
+
+                for (int i = 0; i < transitions.Length; i++)
+                {
+                    var t = transitions[i];
+                    if (t.destinationState != null && t.destinationState.name == toState)
+                    {
+                        if (matchCount == transitionIndex)
+                        {
+                            toRemove = t;
+                            break;
+                        }
+                        matchCount++;
+                    }
+                }
+
+                if (toRemove == null)
+                {
+                    if (matchCount == 0)
+                        return McpToolResult.Error($"No transition from '{fromState}' to '{toState}' found");
+                    else
+                        return McpToolResult.Error($"Transition index {transitionIndex} out of range. Found {matchCount} transitions from '{fromState}' to '{toState}'");
+                }
+
+                Undo.RecordObject(srcState, "Delete State Transition");
+                srcState.RemoveTransition(toRemove);
+            }
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Deleted transition from '{fromState}' to '{toState}'",
+                        fromState = fromState,
+                        toState = toState,
+                        transitionIndex = transitionIndex,
+                        controllerPath = controllerPath
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult ModifyAnimatorState(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var stateName = args.GetValueOrDefault("stateName")?.ToString();
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                int.TryParse(layerObj.ToString(), out layerIndex);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(stateName))
+                return McpToolResult.Error("stateName is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} out of range");
+
+            var stateMachine = controller.layers[layerIndex].stateMachine;
+            var state = FindStateByName(stateMachine, stateName);
+            if (state == null)
+                return McpToolResult.Error($"State '{stateName}' not found in layer {layerIndex}");
+
+            Undo.RecordObject(state, "Modify Animator State");
+
+            var modifiedProperties = new List<string>();
+
+            // Apply optional properties
+            if (args.TryGetValue("newName", out var newNameObj) && newNameObj != null)
+            {
+                var newName = newNameObj.ToString();
+                state.name = newName;
+                modifiedProperties.Add($"name: {newName}");
+            }
+
+            if (args.TryGetValue("motion", out var motionObj) && motionObj != null)
+            {
+                var motionPath = motionObj.ToString();
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(motionPath);
+                if (clip != null)
+                {
+                    state.motion = clip;
+                    modifiedProperties.Add($"motion: {motionPath}");
+                }
+                else
+                {
+                    return McpToolResult.Error($"AnimationClip not found: {motionPath}");
+                }
+            }
+
+            if (args.TryGetValue("speed", out var speedObj) && speedObj != null)
+            {
+                if (float.TryParse(speedObj.ToString(), out float speed))
+                {
+                    state.speed = speed;
+                    modifiedProperties.Add($"speed: {speed}");
+                }
+            }
+
+            if (args.TryGetValue("speedParameter", out var speedParamObj) && speedParamObj != null)
+            {
+                var speedParam = speedParamObj.ToString();
+                state.speedParameterActive = true;
+                state.speedParameter = speedParam;
+                modifiedProperties.Add($"speedParameter: {speedParam}");
+            }
+
+            if (args.TryGetValue("cycleOffset", out var cycleOffsetObj) && cycleOffsetObj != null)
+            {
+                if (float.TryParse(cycleOffsetObj.ToString(), out float cycleOffset))
+                {
+                    state.cycleOffset = cycleOffset;
+                    modifiedProperties.Add($"cycleOffset: {cycleOffset}");
+                }
+            }
+
+            if (args.TryGetValue("mirror", out var mirrorObj) && mirrorObj != null)
+            {
+                if (bool.TryParse(mirrorObj.ToString(), out bool mirror))
+                {
+                    state.mirror = mirror;
+                    modifiedProperties.Add($"mirror: {mirror}");
+                }
+            }
+
+            if (args.TryGetValue("writeDefaultValues", out var writeDefaultsObj) && writeDefaultsObj != null)
+            {
+                if (bool.TryParse(writeDefaultsObj.ToString(), out bool writeDefaults))
+                {
+                    state.writeDefaultValues = writeDefaults;
+                    modifiedProperties.Add($"writeDefaultValues: {writeDefaults}");
+                }
+            }
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Modified state '{stateName}' in layer {layerIndex}",
+                        modifiedProperties = modifiedProperties
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult ModifyTransition(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var fromState = args.GetValueOrDefault("fromState")?.ToString();
+            var toState = args.GetValueOrDefault("toState")?.ToString();
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                int.TryParse(layerObj.ToString(), out layerIndex);
+            int transitionIndex = 0;
+            if (args.TryGetValue("transitionIndex", out var transIdxObj) && transIdxObj != null)
+                int.TryParse(transIdxObj.ToString(), out transitionIndex);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(fromState))
+                return McpToolResult.Error("fromState is required");
+            if (string.IsNullOrEmpty(toState))
+                return McpToolResult.Error("toState is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} out of range");
+
+            var stateMachine = controller.layers[layerIndex].stateMachine;
+
+            AnimatorStateTransition transition = null;
+
+            // Handle AnyState transitions
+            if (fromState.ToLower() == "any" || fromState.ToLower() == "anystate")
+            {
+                var anyTransitions = stateMachine.anyStateTransitions
+                    .Where(t => t.destinationState != null && t.destinationState.name == toState)
+                    .ToArray();
+
+                if (anyTransitions.Length == 0)
+                    return McpToolResult.Error($"No AnyState transition to '{toState}' found");
+                if (transitionIndex >= anyTransitions.Length)
+                    return McpToolResult.Error($"Transition index {transitionIndex} out of range (found {anyTransitions.Length})");
+
+                transition = anyTransitions[transitionIndex];
+            }
+            else
+            {
+                // Find source state and its transitions
+                var srcState = FindStateByName(stateMachine, fromState);
+                if (srcState == null)
+                    return McpToolResult.Error($"Source state '{fromState}' not found in layer {layerIndex}");
+
+                var stateTransitions = srcState.transitions
+                    .Where(t => t.destinationState != null && t.destinationState.name == toState)
+                    .ToArray();
+
+                if (stateTransitions.Length == 0)
+                    return McpToolResult.Error($"No transition from '{fromState}' to '{toState}' found");
+                if (transitionIndex >= stateTransitions.Length)
+                    return McpToolResult.Error($"Transition index {transitionIndex} out of range (found {stateTransitions.Length})");
+
+                transition = stateTransitions[transitionIndex];
+            }
+
+            Undo.RecordObject(transition, "Modify Transition");
+
+            var modifiedProperties = new List<string>();
+
+            // Apply optional properties
+            if (args.TryGetValue("hasExitTime", out var hasExitTimeObj) && hasExitTimeObj != null)
+            {
+                if (bool.TryParse(hasExitTimeObj.ToString(), out bool hasExitTime))
+                {
+                    transition.hasExitTime = hasExitTime;
+                    modifiedProperties.Add($"hasExitTime: {hasExitTime}");
+                }
+            }
+
+            if (args.TryGetValue("exitTime", out var exitTimeObj) && exitTimeObj != null)
+            {
+                if (float.TryParse(exitTimeObj.ToString(), out float exitTime))
+                {
+                    transition.exitTime = exitTime;
+                    modifiedProperties.Add($"exitTime: {exitTime}");
+                }
+            }
+
+            if (args.TryGetValue("duration", out var durationObj) && durationObj != null)
+            {
+                if (float.TryParse(durationObj.ToString(), out float duration))
+                {
+                    transition.duration = duration;
+                    modifiedProperties.Add($"duration: {duration}");
+                }
+            }
+
+            if (args.TryGetValue("offset", out var offsetObj) && offsetObj != null)
+            {
+                if (float.TryParse(offsetObj.ToString(), out float offset))
+                {
+                    transition.offset = offset;
+                    modifiedProperties.Add($"offset: {offset}");
+                }
+            }
+
+            if (args.TryGetValue("interruptionSource", out var interruptObj) && interruptObj != null)
+            {
+                var source = ParseInterruptionSource(interruptObj.ToString());
+                transition.interruptionSource = source;
+                modifiedProperties.Add($"interruptionSource: {source}");
+            }
+
+            if (args.TryGetValue("canTransitionToSelf", out var canTransitionObj) && canTransitionObj != null)
+            {
+                if (bool.TryParse(canTransitionObj.ToString(), out bool canTransitionToSelf))
+                {
+                    transition.canTransitionToSelf = canTransitionToSelf;
+                    modifiedProperties.Add($"canTransitionToSelf: {canTransitionToSelf}");
+                }
+            }
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Modified transition from '{fromState}' to '{toState}'",
+                        modifiedProperties = modifiedProperties
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static TransitionInterruptionSource ParseInterruptionSource(string source)
+        {
+            switch (source?.ToLower())
+            {
+                case "source": return TransitionInterruptionSource.Source;
+                case "destination": return TransitionInterruptionSource.Destination;
+                case "sourcethendestination": return TransitionInterruptionSource.SourceThenDestination;
+                case "destinationthensource": return TransitionInterruptionSource.DestinationThenSource;
+                default: return TransitionInterruptionSource.None;
+            }
+        }
+
+        #endregion
+
+        #region Blend Tree Handlers
+
+        private static BlendTreeType ParseBlendType(string type)
+        {
+            switch (type?.ToLower())
+            {
+                case "1d": return BlendTreeType.Simple1D;
+                case "2dsimpledirectional": return BlendTreeType.SimpleDirectional2D;
+                case "2dfreeformdirectional": return BlendTreeType.FreeformDirectional2D;
+                case "2dfreeformcartesian": return BlendTreeType.FreeformCartesian2D;
+                case "direct": return BlendTreeType.Direct;
+                default: return BlendTreeType.Simple1D;
+            }
+        }
+
+        private static McpToolResult CreateBlendTree(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var stateName = args.GetValueOrDefault("stateName")?.ToString();
+            var blendTypeStr = args.GetValueOrDefault("blendType")?.ToString() ?? "1D";
+            var blendParameter = args.GetValueOrDefault("blendParameter")?.ToString();
+            var blendParameterY = args.GetValueOrDefault("blendParameterY")?.ToString();
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                layerIndex = Convert.ToInt32(layerObj);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(stateName))
+                return McpToolResult.Error("stateName is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found at: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} is out of range. Controller has {controller.layers.Length} layers.");
+
+            Undo.RecordObject(controller, "Create Blend Tree");
+
+            BlendTree blendTree;
+            controller.CreateBlendTreeInController(stateName, out blendTree, layerIndex);
+
+            if (blendTree == null)
+                return McpToolResult.Error("Failed to create blend tree");
+
+            blendTree.blendType = ParseBlendType(blendTypeStr);
+
+            if (!string.IsNullOrEmpty(blendParameter))
+                blendTree.blendParameter = blendParameter;
+
+            if (!string.IsNullOrEmpty(blendParameterY) && blendTree.blendType != BlendTreeType.Simple1D)
+                blendTree.blendParameterY = blendParameterY;
+
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+
+            // Find the created state to return its info
+            var layer = controller.layers[layerIndex];
+            var createdState = layer.stateMachine.states
+                .FirstOrDefault(s => s.state.name == stateName).state;
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Created blend tree '{stateName}' in layer {layerIndex}",
+                        blendTree = new
+                        {
+                            stateName = stateName,
+                            blendType = blendTree.blendType.ToString(),
+                            blendParameter = blendTree.blendParameter,
+                            blendParameterY = blendTree.blendParameterY,
+                            layerIndex = layerIndex,
+                            childCount = blendTree.children.Length
+                        }
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult AddBlendMotion(Dictionary<string, object> args)
+        {
+            var controllerPath = args.GetValueOrDefault("controllerPath")?.ToString();
+            var blendTreeState = args.GetValueOrDefault("blendTreeState")?.ToString();
+            var motionPath = args.GetValueOrDefault("motionPath")?.ToString();
+            int layerIndex = 0;
+            if (args.TryGetValue("layerIndex", out var layerObj) && layerObj != null)
+                layerIndex = Convert.ToInt32(layerObj);
+
+            // For 1D blend trees
+            float threshold = 0f;
+            if (args.TryGetValue("threshold", out var thresholdObj) && thresholdObj != null)
+                threshold = Convert.ToSingle(thresholdObj);
+
+            // For 2D blend trees
+            float positionX = 0f;
+            float positionY = 0f;
+            if (args.TryGetValue("positionX", out var posXObj) && posXObj != null)
+                positionX = Convert.ToSingle(posXObj);
+            if (args.TryGetValue("positionY", out var posYObj) && posYObj != null)
+                positionY = Convert.ToSingle(posYObj);
+
+            if (string.IsNullOrEmpty(controllerPath))
+                return McpToolResult.Error("controllerPath is required");
+            if (string.IsNullOrEmpty(blendTreeState))
+                return McpToolResult.Error("blendTreeState is required");
+            if (string.IsNullOrEmpty(motionPath))
+                return McpToolResult.Error("motionPath is required");
+
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                return McpToolResult.Error($"AnimatorController not found at: {controllerPath}");
+
+            if (layerIndex < 0 || layerIndex >= controller.layers.Length)
+                return McpToolResult.Error($"Layer index {layerIndex} is out of range. Controller has {controller.layers.Length} layers.");
+
+            var layer = controller.layers[layerIndex];
+            var state = layer.stateMachine.states
+                .FirstOrDefault(s => s.state.name == blendTreeState).state;
+
+            if (state == null)
+                return McpToolResult.Error($"State '{blendTreeState}' not found in layer {layerIndex}");
+
+            var blendTree = state.motion as BlendTree;
+            if (blendTree == null)
+                return McpToolResult.Error($"State '{blendTreeState}' does not contain a BlendTree");
+
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(motionPath);
+            if (clip == null)
+                return McpToolResult.Error($"AnimationClip not found at: {motionPath}");
+
+            Undo.RecordObject(blendTree, "Add Blend Motion");
+
+            // Add child based on blend tree type
+            if (blendTree.blendType == BlendTreeType.Simple1D)
+            {
+                blendTree.AddChild(clip, threshold);
+            }
+            else
+            {
+                blendTree.AddChild(clip, new Vector2(positionX, positionY));
+            }
+
+            EditorUtility.SetDirty(controller);
+            EditorUtility.SetDirty(blendTree);
+            AssetDatabase.SaveAssets();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        success = true,
+                        message = $"Added motion '{clip.name}' to blend tree '{blendTreeState}'",
+                        motion = new
+                        {
+                            clipName = clip.name,
+                            clipPath = motionPath,
+                            blendTreeState = blendTreeState,
+                            blendType = blendTree.blendType.ToString(),
+                            threshold = blendTree.blendType == BlendTreeType.Simple1D ? threshold : (float?)null,
+                            position = blendTree.blendType != BlendTreeType.Simple1D
+                                ? new { x = positionX, y = positionY }
+                                : null,
+                            totalChildren = blendTree.children.Length
+                        }
+                    })
+                },
+                isError = false
+            };
+        }
+
+        #endregion
+
+        #region Animation Clip Handlers
+
+        private static McpToolResult ListAnimationClips(Dictionary<string, object> args)
+        {
+            string searchPath = "Assets";
+            if (args.TryGetValue("searchPath", out var searchPathObj) && searchPathObj != null)
+            {
+                searchPath = searchPathObj.ToString();
+            }
+
+            string nameFilter = null;
+            if (args.TryGetValue("nameFilter", out var nameFilterObj) && nameFilterObj != null)
+            {
+                nameFilter = nameFilterObj.ToString().ToLowerInvariant();
+            }
+
+            string avatarFilter = null;
+            if (args.TryGetValue("avatarFilter", out var avatarFilterObj) && avatarFilterObj != null)
+            {
+                avatarFilter = avatarFilterObj.ToString().ToLowerInvariant();
+            }
+
+            var guids = AssetDatabase.FindAssets("t:AnimationClip", new[] { searchPath });
+            var clips = new List<object>();
+
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+
+                if (clip == null) continue;
+
+                // Apply name filter
+                if (!string.IsNullOrEmpty(nameFilter))
+                {
+                    if (!clip.name.ToLowerInvariant().Contains(nameFilter))
+                        continue;
+                }
+
+                // Apply avatar filter
+                if (!string.IsNullOrEmpty(avatarFilter))
+                {
+                    bool isHumanoid = clip.isHumanMotion;
+                    bool isLegacy = clip.legacy;
+
+                    if (avatarFilter == "humanoid" && !isHumanoid) continue;
+                    if (avatarFilter == "generic" && (isHumanoid || isLegacy)) continue;
+                    if (avatarFilter == "legacy" && !isLegacy) continue;
+                }
+
+                clips.Add(new
+                {
+                    path = path,
+                    name = clip.name,
+                    length = clip.length,
+                    frameRate = clip.frameRate,
+                    isLooping = clip.isLooping,
+                    isHumanMotion = clip.isHumanMotion,
+                    hasRootMotion = clip.hasMotionCurves,
+                    isLegacy = clip.legacy
+                });
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        clips = clips,
+                        totalCount = clips.Count,
+                        searchPath = searchPath,
+                        filters = new
+                        {
+                            nameFilter = nameFilter,
+                            avatarFilter = avatarFilter
+                        }
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult GetClipInfo(Dictionary<string, object> args)
+        {
+            var clipPath = args.GetValueOrDefault("clipPath")?.ToString();
+
+            if (string.IsNullOrEmpty(clipPath))
+                return McpToolResult.Error("clipPath is required");
+
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+            if (clip == null)
+                return McpToolResult.Error($"AnimationClip not found at: {clipPath}");
+
+            // Get animation events
+            var animationEvents = AnimationUtility.GetAnimationEvents(clip);
+            var events = new List<object>();
+            foreach (var evt in animationEvents)
+            {
+                events.Add(new
+                {
+                    time = evt.time,
+                    functionName = evt.functionName,
+                    intParameter = evt.intParameter,
+                    floatParameter = evt.floatParameter,
+                    stringParameter = evt.stringParameter
+                });
+            }
+
+            // Get curve bindings
+            var curveBindings = AnimationUtility.GetCurveBindings(clip);
+            var curves = new List<object>();
+            foreach (var binding in curveBindings)
+            {
+                var curve = AnimationUtility.GetEditorCurve(clip, binding);
+                curves.Add(new
+                {
+                    path = binding.path,
+                    propertyName = binding.propertyName,
+                    type = binding.type.Name,
+                    keyCount = curve != null ? curve.length : 0
+                });
+            }
+
+            // Also get object reference curve bindings
+            var objectBindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var binding in objectBindings)
+            {
+                var keyframes = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                curves.Add(new
+                {
+                    path = binding.path,
+                    propertyName = binding.propertyName,
+                    type = binding.type.Name,
+                    keyCount = keyframes != null ? keyframes.Length : 0,
+                    isObjectReference = true
+                });
+            }
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new
+                    {
+                        name = clip.name,
+                        path = clipPath,
+                        length = clip.length,
+                        frameRate = clip.frameRate,
+                        wrapMode = clip.wrapMode.ToString(),
+                        isLooping = clip.isLooping,
+                        isHumanMotion = clip.isHumanMotion,
+                        hasRootMotion = clip.hasMotionCurves,
+                        isLegacy = clip.legacy,
+                        localBounds = new
+                        {
+                            center = new { x = clip.localBounds.center.x, y = clip.localBounds.center.y, z = clip.localBounds.center.z },
+                            size = new { x = clip.localBounds.size.x, y = clip.localBounds.size.y, z = clip.localBounds.size.z }
+                        },
+                        events = events,
+                        eventCount = events.Count,
+                        curves = curves,
+                        curveCount = curves.Count
                     })
                 },
                 isError = false
@@ -4774,7 +6429,7 @@ namespace McpUnity.Server
 
                 // Unpack with Undo support
                 Undo.RegisterFullObjectHierarchyUndo(go, "Unpack Prefab");
-                PrefabUtility.UnpackPrefabInstance(go, unpackMode);
+                PrefabUtility.UnpackPrefabInstance(go, unpackMode, InteractionMode.UserAction);
 
                 return new McpToolResult
                 {
