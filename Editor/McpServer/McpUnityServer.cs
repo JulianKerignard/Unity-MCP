@@ -1471,6 +1471,49 @@ namespace McpUnity.Server
 
             _toolRegistry.RegisterTool(new McpToolDefinition
             {
+                name = "unity_create_tag",
+                description = "Create a new tag in the project. Tags must be created before they can be assigned to GameObjects.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["tagName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name of the new tag (e.g., 'Enemy', 'Collectible', 'Checkpoint')"
+                        }
+                    },
+                    required = new List<string> { "tagName" }
+                }
+            }, CreateTag);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
+                name = "unity_create_layer",
+                description = "Create a new layer in the project. Unity has 32 layer slots (0-31). Slots 0-2, 4-5 are builtin. Slots 3, 6-31 are user-definable.",
+                inputSchema = new McpInputSchema
+                {
+                    type = "object",
+                    properties = new Dictionary<string, McpPropertySchema>
+                    {
+                        ["layerName"] = new McpPropertySchema
+                        {
+                            type = "string",
+                            description = "Name of the new layer (e.g., 'Enemies', 'Projectiles', 'Interactables')"
+                        },
+                        ["layerIndex"] = new McpPropertySchema
+                        {
+                            type = "integer",
+                            description = "Specific layer index (3, 6-31). If omitted, uses the first available empty slot."
+                        }
+                    },
+                    required = new List<string> { "layerName" }
+                }
+            }, CreateLayer);
+
+            _toolRegistry.RegisterTool(new McpToolDefinition
+            {
                 name = "unity_undo",
                 description = "Undo or redo the last editor action(s)",
                 inputSchema = new McpInputSchema
@@ -7583,6 +7626,135 @@ namespace McpUnity.Server
                 count += SetLayerRecursive(child, layer);
             }
             return count;
+        }
+
+        private static McpToolResult CreateTag(Dictionary<string, object> args)
+        {
+            if (!args.TryGetValue("tagName", out var tagObj) || tagObj == null)
+                return CreateErrorResult("Missing required parameter: tagName");
+
+            string tagName = tagObj.ToString().Trim();
+
+            if (string.IsNullOrEmpty(tagName))
+                return CreateErrorResult("Tag name cannot be empty");
+
+            // Vérifier si le tag existe déjà
+            var existingTags = InternalEditorUtility.tags;
+            if (existingTags.Contains(tagName))
+                return CreateErrorResult($"Tag '{tagName}' already exists");
+
+            // Ouvrir le TagManager
+            SerializedObject tagManager = new SerializedObject(
+                AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+
+            SerializedProperty tagsProp = tagManager.FindProperty("tags");
+
+            // Ajouter le tag
+            int newIndex = tagsProp.arraySize;
+            tagsProp.InsertArrayElementAtIndex(newIndex);
+            tagsProp.GetArrayElementAtIndex(newIndex).stringValue = tagName;
+
+            tagManager.ApplyModifiedProperties();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["success"] = true,
+                        ["tagName"] = tagName,
+                        ["message"] = $"Created tag '{tagName}'"
+                    })
+                },
+                isError = false
+            };
+        }
+
+        private static McpToolResult CreateLayer(Dictionary<string, object> args)
+        {
+            if (!args.TryGetValue("layerName", out var layerObj) || layerObj == null)
+                return CreateErrorResult("Missing required parameter: layerName");
+
+            string layerName = layerObj.ToString().Trim();
+
+            if (string.IsNullOrEmpty(layerName))
+                return CreateErrorResult("Layer name cannot be empty");
+
+            // Vérifier si le layer existe déjà
+            int existingIndex = LayerMask.NameToLayer(layerName);
+            if (existingIndex != -1)
+                return CreateErrorResult($"Layer '{layerName}' already exists at index {existingIndex}");
+
+            // Déterminer l'index cible
+            int targetIndex = -1;
+
+            if (args.TryGetValue("layerIndex", out var indexObj))
+            {
+                targetIndex = Convert.ToInt32(indexObj);
+
+                // Valider l'index
+                if (targetIndex < 0 || targetIndex > 31)
+                    return CreateErrorResult("Layer index must be between 0 and 31");
+
+                // Vérifier que ce n'est pas un builtin non-modifiable
+                if (targetIndex == 0 || targetIndex == 1 || targetIndex == 2 ||
+                    targetIndex == 4 || targetIndex == 5)
+                    return CreateErrorResult($"Layer index {targetIndex} is a builtin layer and cannot be modified");
+
+                // Vérifier que le slot est vide
+                string currentName = LayerMask.LayerToName(targetIndex);
+                if (!string.IsNullOrEmpty(currentName))
+                    return CreateErrorResult($"Layer index {targetIndex} is already used by '{currentName}'");
+            }
+            else
+            {
+                // Trouver le premier slot vide
+                // Ordre de recherche: 8-31 (user layers), puis 3, 6, 7
+                int[] searchOrder = new int[] {
+                    8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+                    3, 6, 7
+                };
+
+                foreach (int idx in searchOrder)
+                {
+                    string name = LayerMask.LayerToName(idx);
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        targetIndex = idx;
+                        break;
+                    }
+                }
+
+                if (targetIndex == -1)
+                    return CreateErrorResult("No empty layer slot available (all 27 user slots are used)");
+            }
+
+            // Ouvrir le TagManager
+            SerializedObject tagManager = new SerializedObject(
+                AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+
+            SerializedProperty layersProp = tagManager.FindProperty("layers");
+
+            // Définir le layer
+            layersProp.GetArrayElementAtIndex(targetIndex).stringValue = layerName;
+
+            tagManager.ApplyModifiedProperties();
+
+            return new McpToolResult
+            {
+                content = new List<McpContent>
+                {
+                    McpContent.Json(new Dictionary<string, object>
+                    {
+                        ["success"] = true,
+                        ["layerName"] = layerName,
+                        ["layerIndex"] = targetIndex,
+                        ["message"] = $"Created layer '{layerName}' at index {targetIndex}"
+                    })
+                },
+                isError = false
+            };
         }
 
         #endregion
