@@ -1,0 +1,27 @@
+{
+    "name": "com.claudecode.mcp-unity",
+    "version": "1.0.0",
+    "displayName": "MCP Unity",
+    "description": "Model Context Protocol (MCP) plugin for Unity Editor - Connect AI assistants like Claude to your Unity projects",
+    "unity": "6000.0",
+    "unityRelease": "0a1",
+    "documentationUrl": "https://github.com/your-repo/mcp-unity",
+    "changelogUrl": "https://github.com/your-repo/mcp-unity/blob/main/CHANGELOG.md",
+    "licensesUrl": "https://github.com/your-repo/mcp-unity/blob/main/LICENSE",
+    "keywords": [
+        "mcp",
+        "claude",
+        "ai",
+        "llm",
+        "automation",
+        "editor",
+        "tools"
+    ],
+    "author": {
+        "name": "Claude Code",
+        "email": "support@anthropic.com",
+        "url": "https://claude.ai"
+    },
+    "dependencies": {},
+    "samples": []
+}
